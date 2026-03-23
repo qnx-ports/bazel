@@ -121,7 +121,7 @@ MappedOutputFile::MappedOutputFile(const char* name, size_t estimated_size)
   void* mapped =
       mmap(NULL, mmap_length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (mapped == MAP_FAILED) {
-    snprintf(errmsg, MAX_ERROR, "mmap(): %s; name: %s", strerror(errno), name);
+    snprintf(errmsg, MAX_ERROR, "mmap(): %s", strerror(errno));
     errmsg_ = errmsg;
     return;
   }
