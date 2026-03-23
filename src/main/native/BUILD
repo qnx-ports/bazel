@@ -5,6 +5,7 @@ genrule(
         "//src/conditions:freebsd": ["@bazel_tools//tools/jdk:jni_md_header-freebsd"],
         "//src/conditions:openbsd": ["@bazel_tools//tools/jdk:jni_md_header-openbsd"],
         "//src/conditions:windows": ["@bazel_tools//tools/jdk:jni_md_header-windows"],
+        "//src/conditions:qnx": ["@bazel_tools//tools/jdk:jni_md_header-qnx"],
         "//conditions:default": ["@bazel_tools//tools/jdk:jni_md_header-linux"],
     }),
     outs = ["jni_md.h"],
@@ -39,6 +40,7 @@ filegroup(
         ],
         "//src/conditions:freebsd": ["unix_jni_bsd.cc"],
         "//src/conditions:openbsd": ["unix_jni_bsd.cc"],
+        "//src/conditions:qnx": ["unix_jni_bsd.cc"],
         "//conditions:default": ["unix_jni_linux.cc"],
     }),
 )

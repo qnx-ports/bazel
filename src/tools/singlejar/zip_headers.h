@@ -37,6 +37,14 @@
 #define htole16(x) (x)
 #define htole32(x) (x)
 #define htole64(x) (x)
+#elif defined(__QNX__)
+#include <gulliver.h>
+#define le16toh(x) ENDIAN_LE16(x)
+#define le32toh(x) ENDIAN_LE32(x)
+#define le64toh(x) ENDIAN_LE64(x)
+#define htole16(x) ENDIAN_LE16(x)
+#define htole32(x) ENDIAN_LE32(x)
+#define htole64(x) ENDIAN_LE64(x)
 #else
 #error "This platform is not supported."
 #endif

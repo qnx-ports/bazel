@@ -50,6 +50,8 @@ final class ConfigExpander {
         return "freebsd";
       case OPENBSD:
         return "openbsd";
+      case QNX:
+        return "qnx";
       default:
         return OS.getCurrent().getCanonicalName();
     }

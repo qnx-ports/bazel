@@ -27,7 +27,9 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#ifndef __QNX__
 #include <sys/syscall.h>
+#endif
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -685,6 +687,33 @@ static jobject NewDirents(JNIEnv *env,
 static char GetDirentType(struct dirent *entry,
                           int dirfd,
                           bool follow_symlinks) {
+#ifdef __QNX__
+  struct dirent_extra *dex;
+  for(dex = _DEXTRA_FIRST(entry); _DEXTRA_VALID(dex, entry);
+    dex = _DEXTRA_NEXT(dex)) {
+    switch(dex->d_type) {
+      case _DTYPE_STAT:
+      case _DTYPE_LSTAT:
+        struct dirent_extra_stat *dex_stat;
+        dex_stat = (struct dirent_extra_stat *) dex;
+
+        if (S_ISDIR(dex_stat->d_stat.st_mode)) {
+          return 'd';
+        } else if (S_ISDIR(dex_stat->d_stat.st_mode)) {
+          if (!follow_symlinks) {
+            return 's';
+          }
+        } else if (S_ISDIR(dex_stat->d_stat.st_mode)) {
+          return 'f';
+        }
+        return '?';
+        break;
+      default:
+        break;
+    }
+  }
+  return '?';
+#else
   switch (entry->d_type) {
     case DT_REG:
       return 'f';
@@ -706,6 +735,7 @@ static char GetDirentType(struct dirent *entry,
     default:
       return '?';
   }
+#endif
 }
 }  // namespace
 
@@ -990,6 +1020,30 @@ static int ForceDelete(JNIEnv* env, const std::vector<std::string>& dir_path,
 // posts an exception.
 static int IsSubdir(JNIEnv* env, const std::vector<std::string>& dir_path,
                     const int dir_fd, const struct dirent* de, bool* is_dir) {
+#ifdef __QNX__
+  struct dirent_extra *dex;
+  for(dex = _DEXTRA_FIRST(de); _DEXTRA_VALID(dex, de);
+    dex = _DEXTRA_NEXT(dex)) {
+    switch(dex->d_type) {
+      case _DTYPE_STAT:
+      case _DTYPE_LSTAT:
+        struct dirent_extra_stat *dex_stat;
+        dex_stat = (struct dirent_extra_stat *) dex;
+
+        if (S_ISDIR(dex_stat->d_stat.st_mode)) {
+          *is_dir = true;
+          return 0;
+        }
+        *is_dir = false;
+        return 0;
+        break;
+      default:
+        break;
+    }
+  }
+  *is_dir = false;
+  return 0;
+#else
   switch (de->d_type) {
     case DT_DIR:
       *is_dir = true;
@@ -1010,6 +1064,7 @@ static int IsSubdir(JNIEnv* env, const std::vector<std::string>& dir_path,
       *is_dir = false;
       return 0;
   }
+#endif
 }
 
 // Recursively deletes all trees under the given path.

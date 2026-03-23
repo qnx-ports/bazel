@@ -1358,7 +1358,7 @@ def _impl(ctx):
             unfiltered_compile_flags_feature,
             treat_warnings_as_errors_feature,
             archive_param_file_feature,
-        ] + layering_check_features(ctx.attr.compiler)
+        ]
     else:
         # macOS artifact name patterns differ from the defaults only for dynamic
         # libraries.

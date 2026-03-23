@@ -33,6 +33,7 @@ int TerminateAndWaitForAll(pid_t pid) {
     return 0;
   }
 
+#ifndef __QNX__
   // Cope with children that may have escaped the process group or that
   // did not exit quickly enough.
   FILE *f = fopen("/proc/thread-self/children", "r");
@@ -50,6 +51,7 @@ int TerminateAndWaitForAll(pid_t pid) {
     usleep(100);
   }
   fclose(f);
+#endif
 
   return 0;
 }

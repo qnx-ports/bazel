@@ -40,6 +40,7 @@ cc_binary(
     }),
     linkopts = select({
         "//src/conditions:darwin": ["-lm"],
+        "//src/conditions:qnx": ["-lm"],
         "//src/conditions:openbsd": [],
         "//src/conditions:windows": [],
         "//conditions:default": [
@@ -74,6 +75,7 @@ cc_binary(
         "//src/conditions:darwin": ["dummy-sandbox.c"],
         "//src/conditions:freebsd": ["dummy-sandbox.c"],
         "//src/conditions:openbsd": ["dummy-sandbox.c"],
+        "//src/conditions:qnx": ["dummy-sandbox.c"],
         "//src/conditions:windows": ["dummy-sandbox.c"],
         "//conditions:default": [
             "linux-sandbox.cc",
@@ -88,6 +90,7 @@ cc_binary(
         "//src/conditions:darwin": [],
         "//src/conditions:freebsd": [],
         "//src/conditions:openbsd": [],
+        "//src/conditions:qnx": [],
         "//src/conditions:windows": [],
         "//conditions:default": [
             "-lm",
@@ -98,6 +101,7 @@ cc_binary(
         "//src/conditions:darwin": [],
         "//src/conditions:freebsd": [],
         "//src/conditions:openbsd": [],
+        "//src/conditions:qnx": [],
         "//src/conditions:windows": [],
         "//conditions:default": [
             ":logging",

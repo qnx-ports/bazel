@@ -61,6 +61,12 @@ filegroup(
 )
 
 filegroup(
+    name = "jni_md_header-qnx",
+    srcs = ["include/qnx/jni_md.h"],
+    deprecation = DEPRECATION_MESSAGE,
+)
+
+filegroup(
     name = "java",
     srcs = select({
         ":windows": ["bin/java.exe"],

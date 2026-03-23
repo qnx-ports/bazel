@@ -15,13 +15,14 @@
 #if defined(__FreeBSD__)
 # define HAVE_EXTATTR
 # define HAVE_SYSCTLBYNAME
-#elif defined(__OpenBSD__)
+#elif defined(__OpenBSD__) || defined(__QNX__)
 // No sys/extattr.h or sysctlbyname on this platform.
 #else
 # error This BSD is not supported
 #endif
 
 #include <assert.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -69,6 +70,16 @@ int StatSeconds(const portable_stat_struct &statbuf, StatTimes t) {
 }
 
 int StatNanoSeconds(const portable_stat_struct &statbuf, StatTimes t) {
+#ifdef __QNX__
+  switch (t) {
+    case STAT_ATIME:
+      return statbuf.st_atim.tv_nsec;
+    case STAT_CTIME:
+      return statbuf.st_ctim.tv_nsec;
+    case STAT_MTIME:
+      return statbuf.st_mtim.tv_nsec;
+  }
+#else
   switch (t) {
     case STAT_ATIME:
       return statbuf.st_atimespec.tv_nsec;
@@ -77,6 +88,7 @@ int StatNanoSeconds(const portable_stat_struct &statbuf, StatTimes t) {
     case STAT_MTIME:
       return statbuf.st_mtimespec.tv_nsec;
   }
+#endif
 }
 
 ssize_t portable_getxattr(const char *path, const char *name, void *value,
