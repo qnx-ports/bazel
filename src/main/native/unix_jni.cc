@@ -699,11 +699,11 @@ static char GetDirentType(struct dirent *entry,
 
         if (S_ISDIR(dex_stat->d_stat.st_mode)) {
           return 'd';
-        } else if (S_ISDIR(dex_stat->d_stat.st_mode)) {
+        } else if (S_ISLNK(dex_stat->d_stat.st_mode)) {
           if (!follow_symlinks) {
             return 's';
           }
-        } else if (S_ISDIR(dex_stat->d_stat.st_mode)) {
+        } else if (S_ISREG(dex_stat->d_stat.st_mode)) {
           return 'f';
         }
         return '?';
@@ -953,10 +953,18 @@ static DIR* ForceOpendir(JNIEnv* env, const std::vector<std::string>& dir_path,
     // descriptor, not AT_FDCWD used as the starting point of DeleteTreesBelow
     // recursion).
     if (errno == EACCES && dir_fd != AT_FDCWD) {
+#ifdef __QNX__
+      // fchmod() for a directory returns ENOSYS.
+      if (fchmodat(dir_fd, ".", 0700, 0) == -1) {
+        PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, ".");
+        return nullptr;
+      }
+#else
       if (fchmod(dir_fd, 0700) == -1) {
         PostDeleteTreesBelowException(env, errno, "fchmod", dir_path, nullptr);
         return nullptr;
       }
+#endif
     }
     if (fchmodat(dir_fd, entry, 0700, 0) == -1) {
       PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, entry);
@@ -964,7 +972,7 @@ static DIR* ForceOpendir(JNIEnv* env, const std::vector<std::string>& dir_path,
     }
     fd = openat(dir_fd, entry, flags);
     if (fd == -1) {
-      PostDeleteTreesBelowException(env, errno, "opendir", dir_path, entry);
+      PostDeleteTreesBelowException(env, errno, "openat", dir_path, entry);
       return nullptr;
     }
   }
@@ -993,6 +1001,24 @@ static int ForceDelete(JNIEnv* env, const std::vector<std::string>& dir_path,
                        const bool is_dir) {
   const int flags = is_dir ? AT_REMOVEDIR : 0;
   if (unlinkat(dir_fd, entry, flags) == -1) {
+#ifdef __QNX__
+    // fchmod() for a directory returns ENOSYS.
+    if (fchmodat(dir_fd, ".", 0700, 0) == -1) {
+      PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, ".");
+      return -1;
+    }
+    if (unlinkat(dir_fd, entry, flags) == -1 && (errno != EPERM)) {
+      PostDeleteTreesBelowException(env, errno, "unlinkat", dir_path, entry);
+      return -1;
+    } else if (errno == EPERM) {
+      // Fallback to assuming the file is a directory (there is currently an
+      // issue where it may be incorrectly labelled).
+      if (unlinkat(dir_fd, entry, AT_REMOVEDIR) == -1) {
+        PostDeleteTreesBelowException(env, errno, "unlinkat", dir_path, entry);
+        return -1;
+      }
+    }
+#else
     if (fchmod(dir_fd, 0700) == -1) {
       PostDeleteTreesBelowException(env, errno, "fchmod", dir_path, nullptr);
       return -1;
@@ -1001,6 +1027,7 @@ static int ForceDelete(JNIEnv* env, const std::vector<std::string>& dir_path,
       PostDeleteTreesBelowException(env, errno, "unlinkat", dir_path, entry);
       return -1;
     }
+#endif
   }
   return 0;
 }
@@ -1041,7 +1068,14 @@ static int IsSubdir(JNIEnv* env, const std::vector<std::string>& dir_path,
         break;
     }
   }
-  *is_dir = false;
+  // Fallback to fstatat()...
+  struct stat st;
+  if (fstatat(dir_fd, de->d_name, &st, AT_SYMLINK_NOFOLLOW) == -1) {
+    PostDeleteTreesBelowException(env, errno, "fstatat", dir_path,
+                                  de->d_name);
+    return -1;
+  }
+  *is_dir = st.st_mode & S_IFDIR;
   return 0;
 #else
   switch (de->d_type) {
