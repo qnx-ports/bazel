@@ -712,6 +712,19 @@ static char GetDirentType(struct dirent *entry,
         break;
     }
   }
+  // Fallback to fstat()...
+  struct stat st;
+  if (fstatat(dirfd, entry->d_name, &st, 0) != -1) {
+    if (S_ISDIR(st.st_mode)) {
+      return 'd';
+    } else if (S_ISLNK(st.st_mode)) {
+      if (!follow_symlinks) {
+        return 's';
+      }
+    } else if (S_ISREG(st.st_mode)) {
+      return 'f';
+    }
+  }
   return '?';
 #else
   switch (entry->d_type) {
@@ -1007,27 +1020,16 @@ static int ForceDelete(JNIEnv* env, const std::vector<std::string>& dir_path,
       PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, ".");
       return -1;
     }
-    if (unlinkat(dir_fd, entry, flags) == -1 && (errno != EPERM)) {
-      PostDeleteTreesBelowException(env, errno, "unlinkat", dir_path, entry);
-      return -1;
-    } else if (errno == EPERM) {
-      // Fallback to assuming the file is a directory (there is currently an
-      // issue where it may be incorrectly labelled).
-      if (unlinkat(dir_fd, entry, AT_REMOVEDIR) == -1) {
-        PostDeleteTreesBelowException(env, errno, "unlinkat", dir_path, entry);
-        return -1;
-      }
-    }
 #else
     if (fchmod(dir_fd, 0700) == -1) {
       PostDeleteTreesBelowException(env, errno, "fchmod", dir_path, nullptr);
       return -1;
     }
+#endif
     if (unlinkat(dir_fd, entry, flags) == -1) {
       PostDeleteTreesBelowException(env, errno, "unlinkat", dir_path, entry);
       return -1;
     }
-#endif
   }
   return 0;
 }
