@@ -109,11 +109,15 @@ MappedOutputFile::MappedOutputFile(const char* name, size_t estimated_size)
     return;
   }
 
+#ifndef __QNX__
   // Ensure that any buffer overflow in JarStripper will result in
   // SIGSEGV or SIGBUS by over-allocating beyond the end of the file.
   size_t mmap_length =
       std::min(static_cast<size_t>(estimated_size + sysconf(_SC_PAGESIZE)),
                std::numeric_limits<size_t>::max());
+#else
+  size_t mmap_length = estimated_size;
+#endif
   void* mapped =
       mmap(NULL, mmap_length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (mapped == MAP_FAILED) {

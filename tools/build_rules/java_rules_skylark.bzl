@@ -63,11 +63,11 @@ def _java_library_impl(ctx):
         files += " @" + javalist_output
         for file in ctx.files.srcjars:
             cmd += "%s tf %s | grep '\\.java$' | sed 's|^|%s/|' >> %s\n" % (jar_path, file.path, java_output, javalist_output)
-            cmd += "unzip %s -d %s >/dev/null\n" % (file.path, java_output)
+            cmd += "unzip -d %s %s >/dev/null\n" % (java_output, file.path)
 
     if ctx.files.srcs or ctx.files.srcjars:
         cmd += "%s/bin/javac" % java_runtime.java_home
-        cmd += " " + " ".join(javac_options)
+        cmd += " " + " ".join(javac_options) + "-proc:full"
         if compile_time_jars:
             cmd += " -classpath '" + cmd_helper.join_paths(ctx.configuration.host_path_separator, compile_time_jars) + "'"
         cmd += " -d " + build_output + files + "\n"
@@ -121,7 +121,7 @@ def _java_binary_impl(ctx):
     # Cleaning build output directory
     cmd = "set -e;rm -rf " + build_output + ";mkdir " + build_output + "\n"
     for jar in library_result[1].runtime_jars.to_list():
-        cmd += "unzip -qn " + jar.path + " -d " + build_output + "\n"
+        cmd += "unzip -qn -d " + build_output + " " + jar.path + "\n"
     cmd += (jar_path + " cmf " + manifest.path + " " +
             deploy_jar.path + " -C " + build_output + " .\n" +
             "touch " + build_output + "\n")

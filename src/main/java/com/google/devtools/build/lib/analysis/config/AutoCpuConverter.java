@@ -76,6 +76,15 @@ public class AutoCpuConverter extends Converter.Contextless<String> {
             default:
               return "unknown";
           }
+        case QNX:
+          switch (CPU.getCurrent()) {
+            case X86_64:
+              return "qnx_x64";
+            case AARCH64:
+              return "qnx_arm64";
+            default:
+              return "unknown";
+          }
         default:
           return "unknown";
       }

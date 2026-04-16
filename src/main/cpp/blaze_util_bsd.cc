@@ -17,6 +17,8 @@
 # define STANDARD_JAVABASE "/usr/local/openjdk8"
 #elif defined(__OpenBSD__)
 # define STANDARD_JAVABASE "/usr/local/jdk-17"
+#elif defined(__QNX__)
+# define STANDARD_JAVABASE "/usr/lib/jvm/java-25-openjdk"
 #else
 # error This BSD is not supported
 #endif
@@ -39,6 +41,9 @@
 #include <sys/sysctl.h>
 #include <sys/types.h>
 #include <sys/un.h>
+#if defined(__QNX__)
+#include <sys/statvfs.h>
+#endif
 #include <unistd.h>
 #if defined(HAVE_PROCSTAT)
 # include <libprocstat.h>  // must be included after <sys/...> headers
@@ -74,6 +79,7 @@ string GetOutputRoot() {
 }
 
 void WarnFilesystemType(const blaze_util::Path &output_base) {
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
   struct statfs buf = {};
   if (statfs(output_base.AsNativePath().c_str(), &buf) < 0) {
     BAZEL_LOG(WARNING) << "couldn't get file system type information for '"
@@ -87,6 +93,21 @@ void WarnFilesystemType(const blaze_util::Path &output_base) {
                        << "' is on NFS. This may lead to surprising failures "
                           "and undetermined behavior.";
   }
+#elif defined(__QNX__)
+  struct statvfs buf = {};
+  if (statvfs(output_base.AsNativePath().c_str(), &buf) < 0) {
+    BAZEL_LOG(WARNING) << "couldn't get file system type information for '"
+                       << output_base.AsPrintablePath()
+                       << "': " << strerror(errno);
+    return;
+  }
+
+  if (strcmp(buf.f_basetype, "NFSv3") == 0) {
+    BAZEL_LOG(WARNING) << "Output base '" << output_base.AsPrintablePath()
+                       << "' is on NFS. This may lead to surprising failures "
+                          "and undetermined behavior.";
+  }
+#endif
 }
 
 string GetSelfPath(const char* argv0) {
@@ -112,7 +133,7 @@ string GetSelfPath(const char* argv0) {
   }
   procstat_close(procstat);
   return string(buffer);
-#elif defined(__OpenBSD__)
+#elif defined(__OpenBSD__) || defined(__QNX__)
   // OpenBSD does not provide a way for a running process to find a path to its
   // own executable, so we try to figure out a path by inspecting argv[0]. In
   // theory this is inadequate, since the parent process can set argv[0] to

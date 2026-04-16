@@ -344,6 +344,7 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
 
     repository_ctx.file("tools/cpp/empty.cc", "int main() {}")
     darwin = cpu_value.startswith("darwin")
+    qnx = cpu_value.startswith("qnx")
     bsd = cpu_value == "freebsd" or cpu_value == "openbsd"
 
     cc = find_cc(repository_ctx, overriden_tools)
@@ -413,7 +414,7 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
         False,
     ), ":")
 
-    use_libcpp = darwin or bsd
+    use_libcpp = darwin or bsd or qnx
     bazel_linklibs = "-lc++:-lm" if use_libcpp else "-lstdc++:-lm"
     bazel_linkopts = ""
 
@@ -474,7 +475,8 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
         ),
     )
 
-    if is_clang:
+    generate_modulemap = is_clang and not qnx
+    if generate_modulemap:
         repository_ctx.file("module.modulemap", _generate_system_module_map(
             repository_ctx,
             builtin_include_directories,
@@ -488,7 +490,7 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
         {
             "%{cc_toolchain_identifier}": cc_toolchain_identifier,
             "%{name}": cpu_value,
-            "%{modulemap}": ("\":module.modulemap\"" if is_clang else "None"),
+            "%{modulemap}": ("\":module.modulemap\"" if generate_modulemap else "None"),
             "%{cc_compiler_deps}": get_starlark_list([":builtin_include_directory_paths"] + (
                 [":cc_wrapper"] if darwin else []
             )),
@@ -603,10 +605,6 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
                     # Profile first and / or use FDO if you need better performance than this.
                     "-O2",
 
-                    # Security hardening on by default.
-                    # Conservative choice; -D_FORTIFY_SOURCE=2 may be unsafe in some cases.
-                    "-D_FORTIFY_SOURCE=1",
-
                     # Disable assertions
                     "-DNDEBUG",
 
@@ -614,6 +612,15 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
                     # size in some cases?).
                     "-ffunction-sections",
                     "-fdata-sections",
+                ] + [
+                    "-D_QNX_SOURCE",
+                    "-Qunused-arguments",
+                    "-Wno-error",
+                    "-w",
+                ] if qnx else [
+                    # Security hardening on by default.
+                    # Conservative choice; -D_FORTIFY_SOURCE=2 may be unsafe in some cases.
+                    "-D_FORTIFY_SOURCE=1",
                 ],
             ),
             "%{opt_link_flags}": get_starlark_list(

@@ -56,7 +56,7 @@ tmp_zip="$tmp_dir/archive.zip"
 if [[ "$directory_prefix" == "-" ]]; then
   for curr_zip in "$@"
   do
-    unzip -q -o "$curr_zip" -d "$tmp_dir"
+    unzip -q -o -d "$tmp_dir" "$curr_zip"
   done
 
   cd "$tmp_dir"
@@ -65,7 +65,7 @@ else
   mkdir -p "$tmp_dir/$directory_prefix"
   for curr_zip in "$@"
   do
-    unzip -q -o "$curr_zip" -d "$tmp_dir/$directory_prefix"
+    unzip -q -o -d "$tmp_dir/$directory_prefix" "$curr_zip"
   done
 
   cd "$tmp_dir"

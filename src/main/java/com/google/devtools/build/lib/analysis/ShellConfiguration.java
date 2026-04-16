@@ -89,6 +89,11 @@ public class ShellConfiguration extends Fragment {
                   OS_CONSTRAINT_SETTING,
                   Label.parseAbsoluteUnchecked("@platforms//os:openbsd")))
           .put(
+              OS.QNX,
+              ConstraintValueInfo.create(
+                  OS_CONSTRAINT_SETTING,
+                  Label.parseAbsoluteUnchecked("@platforms//os:qnx")))
+          .put(
               OS.UNKNOWN,
               ConstraintValueInfo.create(
                   OS_CONSTRAINT_SETTING,

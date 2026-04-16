@@ -199,6 +199,11 @@ def get_cpu_value(repository_ctx):
             return "arm64_windows"
         else:
             return "x64_windows"
+    if os_name.find("qnx") != -1:
+        if arch == "aarch64":
+            return "qnx_arm64"
+        else:
+            return "qnx_x64"
 
     if arch in ["power", "ppc64le", "ppc", "ppc64"]:
         return "ppc"

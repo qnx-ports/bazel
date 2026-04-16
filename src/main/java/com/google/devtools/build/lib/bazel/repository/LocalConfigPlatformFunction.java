@@ -141,6 +141,8 @@ public class LocalConfigPlatformFunction extends RepositoryFunction {
         return "@platforms//os:linux";
       case WINDOWS:
         return "@platforms//os:windows";
+      case QNX:
+        return "@platforms//os:qnx";
       default:
         // Unknown, so skip it.
         return null;

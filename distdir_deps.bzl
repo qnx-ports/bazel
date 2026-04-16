@@ -97,12 +97,11 @@ DIST_DEPS = {
     #
     #################################################
     "com_google_protobuf": {
-        "archive": "v3.19.6.tar.gz",
-        "sha256": "9a301cf94a8ddcb380b901e7aac852780b826595075577bb967004050c835056",
-        "strip_prefix": "protobuf-3.19.6",
+        "archive": "qnx-v3.19.6.tar.gz",
+        "sha256": "06897227957e7b5b361922729a6aa02f5eb86239598c80c76c646de7347a4eb2",
+        "strip_prefix": "protobuf-qnx-v3.19.6",
         "urls": [
-            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.19.6.tar.gz",
-            "https://github.com/protocolbuffers/protobuf/archive/v3.19.6.tar.gz",
+            "https://github.com/qnx-ports/protobuf/archive/qnx-v3.19.6.tar.gz",
         ],
         "patch_args": ["-p1"],
         "patches": ["//third_party/protobuf:3.19.6.patch"],
@@ -112,12 +111,11 @@ DIST_DEPS = {
         ],
     },
     "com_github_grpc_grpc": {
-        "archive": "v1.47.0.tar.gz",
-        "sha256": "271bdc890bf329a8de5b65819f0f9590a5381402429bca37625b63546ed19e54",
-        "strip_prefix": "grpc-1.47.0",
+        "archive": "qnx-v1.47.0.tar.gz",
+        "sha256": "20b641cef20249350b08da91833332b551a1f78264f626bbf21ce22efbe91b76",
+        "strip_prefix": "grpc-qnx-v1.47.0",
         "urls": [
-            "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.47.0.tar.gz",
-            "https://github.com/grpc/grpc/archive/v1.47.0.tar.gz",
+            "https://github.com/qnx-ports/grpc/archive/qnx-v1.47.0.tar.gz",
         ],
         "patch_args": ["-p1"],
         "patches": [
@@ -229,16 +227,16 @@ DIST_DEPS = {
         ],
     },
     "com_google_absl": {
-        "archive": "20230802.0.tar.gz",
-        "sha256": "59d2976af9d6ecf001a81a35749a6e551a335b949d34918cfade07737b9d93c5",
+        "archive": "qnx-20230802.0.tar.gz",
+        "sha256": "cb72959836f2c98b673a7ce66ce6b7c8a2870e191c0faa68793ddc82ebc37892",
         "urls": [
-            "https://github.com/abseil/abseil-cpp/archive/refs/tags/20230802.0.tar.gz",
+            "https://github.com/qnx-ports/abseil-cpp/archive/qnx-20230802.0.tar.gz",
         ],
         "used_in": [
             "additional_distfiles",
             "test_WORKSPACE_files",
         ],
-        "strip_prefix": "abseil-cpp-20230802.0",
+        "strip_prefix": "abseil-cpp-qnx-20230802.0",
     },
     "zstd-jni": {
         "archive": "v1.5.2-3.zip",

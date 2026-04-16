@@ -140,13 +140,13 @@ function java_compilation() {
   # Useful if your system chooses too small of a max heap for javac.
   # We intentionally rely on shell word splitting to allow multiple
   # additional arguments to be passed to javac.
-  run "${JAVAC}" -classpath "${classpath}" -sourcepath "${sourcepath}" \
+  run "${JAVAC}" -proc:full -classpath "${classpath}" -sourcepath "${sourcepath}" \
       -d "${output}/classes" -source "$JAVA_VERSION" -target "$JAVA_VERSION" \
       -encoding UTF-8 ${BAZEL_JAVAC_OPTS} "@${paramfile}"
 
   log "Extracting helper classes for $name..."
   for f in ${library_jars} ; do
-    run unzip -qn ${f} -d "${output}/classes"
+    run unzip -qn -d "${output}/classes" ${f}
   done
 }
 
@@ -447,6 +447,7 @@ function run_bazel_jar() {
       -XX:+HeapDumpOnOutOfMemoryError -Xverify:none -Dfile.encoding=ISO-8859-1 \
       -XX:HeapDumpPath=${OUTPUT_DIR} \
       -Djava.util.logging.config.file=${OUTPUT_DIR}/javalog.properties \
+      --add-opens=java.base/java.lang=ALL-UNNAMED \
       ${JNI_FLAGS} \
       -jar ${ARCHIVE_DIR}/libblaze.jar \
       --batch \

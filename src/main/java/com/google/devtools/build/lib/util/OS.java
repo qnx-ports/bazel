@@ -23,10 +23,11 @@ public enum OS {
   FREEBSD("freebsd", "FreeBSD"),
   OPENBSD("openbsd", "OpenBSD"),
   LINUX("linux", "Linux"),
+  QNX("qnx", "QNX"),
   WINDOWS("windows", "Windows"),
   UNKNOWN("unknown", "");
 
-  private static final EnumSet<OS> POSIX_COMPATIBLE = EnumSet.of(DARWIN, FREEBSD, OPENBSD, LINUX);
+  private static final EnumSet<OS> POSIX_COMPATIBLE = EnumSet.of(DARWIN, FREEBSD, OPENBSD, LINUX, QNX);
 
   private final String canonicalName;
   private final String detectionName;

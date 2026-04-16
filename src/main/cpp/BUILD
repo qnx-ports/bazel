@@ -30,6 +30,10 @@ cc_library(
             "blaze_util_bsd.cc",
             "blaze_util_posix.cc",
         ],
+        "//src/conditions:qnx": [
+            "blaze_util_bsd.cc",
+            "blaze_util_posix.cc",
+        ],
         "//src/conditions:windows": [
             "blaze_util_windows.cc",
         ],
@@ -111,6 +115,10 @@ cc_binary(
             "-lm",
         ],
         "//src/conditions:openbsd": [
+        ],
+        "//src/conditions:qnx": [
+            "-lsocket",
+            "-lm",
         ],
         "//src/conditions:windows": [
         ],

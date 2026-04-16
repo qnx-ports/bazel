@@ -27,7 +27,9 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#ifndef __QNX__
 #include <sys/syscall.h>
+#endif
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -685,6 +687,45 @@ static jobject NewDirents(JNIEnv *env,
 static char GetDirentType(struct dirent *entry,
                           int dirfd,
                           bool follow_symlinks) {
+#ifdef __QNX__
+  struct dirent_extra *dex;
+  for(dex = _DEXTRA_FIRST(entry); _DEXTRA_VALID(dex, entry);
+    dex = _DEXTRA_NEXT(dex)) {
+    switch(dex->d_type) {
+      case _DTYPE_STAT:
+      case _DTYPE_LSTAT:
+        struct dirent_extra_stat *dex_stat;
+        dex_stat = (struct dirent_extra_stat *) dex;
+
+        if (S_ISDIR(dex_stat->d_stat.st_mode)) {
+          return 'd';
+        } else if (S_ISLNK(dex_stat->d_stat.st_mode)) {
+          if (!follow_symlinks) {
+            return 's';
+          }
+        } else if (S_ISREG(dex_stat->d_stat.st_mode)) {
+          return 'f';
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  // Fallback to fstat()...
+  struct stat st;
+  if (fstatat(dirfd, entry->d_name, &st, 0) != -1) {
+    if (S_ISDIR(st.st_mode)) {
+      return 'd';
+    } else if (S_ISLNK(st.st_mode)) {
+      if (!follow_symlinks) {
+        return 's';
+      }
+    } else if (S_ISREG(st.st_mode)) {
+      return 'f';
+    }
+  }
+  return '?';
+#else
   switch (entry->d_type) {
     case DT_REG:
       return 'f';
@@ -706,6 +747,7 @@ static char GetDirentType(struct dirent *entry,
     default:
       return '?';
   }
+#endif
 }
 }  // namespace
 
@@ -923,10 +965,18 @@ static DIR* ForceOpendir(JNIEnv* env, const std::vector<std::string>& dir_path,
     // descriptor, not AT_FDCWD used as the starting point of DeleteTreesBelow
     // recursion).
     if (errno == EACCES && dir_fd != AT_FDCWD) {
+#ifdef __QNX__
+      // fchmod() for a directory returns ENOSYS.
+      if (fchmodat(dir_fd, ".", 0700, 0) == -1) {
+        PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, ".");
+        return nullptr;
+      }
+#else
       if (fchmod(dir_fd, 0700) == -1) {
         PostDeleteTreesBelowException(env, errno, "fchmod", dir_path, nullptr);
         return nullptr;
       }
+#endif
     }
     if (fchmodat(dir_fd, entry, 0700, 0) == -1) {
       PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, entry);
@@ -934,7 +984,7 @@ static DIR* ForceOpendir(JNIEnv* env, const std::vector<std::string>& dir_path,
     }
     fd = openat(dir_fd, entry, flags);
     if (fd == -1) {
-      PostDeleteTreesBelowException(env, errno, "opendir", dir_path, entry);
+      PostDeleteTreesBelowException(env, errno, "openat", dir_path, entry);
       return nullptr;
     }
   }
@@ -963,10 +1013,18 @@ static int ForceDelete(JNIEnv* env, const std::vector<std::string>& dir_path,
                        const bool is_dir) {
   const int flags = is_dir ? AT_REMOVEDIR : 0;
   if (unlinkat(dir_fd, entry, flags) == -1) {
+#ifdef __QNX__
+    // fchmod() for a directory returns ENOSYS.
+    if (fchmodat(dir_fd, ".", 0700, 0) == -1) {
+      PostDeleteTreesBelowException(env, errno, "fchmodat", dir_path, ".");
+      return -1;
+    }
+#else
     if (fchmod(dir_fd, 0700) == -1) {
       PostDeleteTreesBelowException(env, errno, "fchmod", dir_path, nullptr);
       return -1;
     }
+#endif
     if (unlinkat(dir_fd, entry, flags) == -1) {
       PostDeleteTreesBelowException(env, errno, "unlinkat", dir_path, entry);
       return -1;
@@ -990,6 +1048,37 @@ static int ForceDelete(JNIEnv* env, const std::vector<std::string>& dir_path,
 // posts an exception.
 static int IsSubdir(JNIEnv* env, const std::vector<std::string>& dir_path,
                     const int dir_fd, const struct dirent* de, bool* is_dir) {
+#ifdef __QNX__
+  struct dirent_extra *dex;
+  for(dex = _DEXTRA_FIRST(de); _DEXTRA_VALID(dex, de);
+    dex = _DEXTRA_NEXT(dex)) {
+    switch(dex->d_type) {
+      case _DTYPE_STAT:
+      case _DTYPE_LSTAT:
+        struct dirent_extra_stat *dex_stat;
+        dex_stat = (struct dirent_extra_stat *) dex;
+
+        if (S_ISDIR(dex_stat->d_stat.st_mode)) {
+          *is_dir = true;
+          return 0;
+        }
+        *is_dir = false;
+        return 0;
+        break;
+      default:
+        break;
+    }
+  }
+  // Fallback to fstatat()...
+  struct stat st;
+  if (fstatat(dir_fd, de->d_name, &st, AT_SYMLINK_NOFOLLOW) == -1) {
+    PostDeleteTreesBelowException(env, errno, "fstatat", dir_path,
+                                  de->d_name);
+    return -1;
+  }
+  *is_dir = st.st_mode & S_IFDIR;
+  return 0;
+#else
   switch (de->d_type) {
     case DT_DIR:
       *is_dir = true;
@@ -1010,6 +1099,7 @@ static int IsSubdir(JNIEnv* env, const std::vector<std::string>& dir_path,
       *is_dir = false;
       return 0;
   }
+#endif
 }
 
 // Recursively deletes all trees under the given path.
