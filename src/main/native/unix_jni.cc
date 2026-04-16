@@ -706,7 +706,6 @@ static char GetDirentType(struct dirent *entry,
         } else if (S_ISREG(dex_stat->d_stat.st_mode)) {
           return 'f';
         }
-        return '?';
         break;
       default:
         break;

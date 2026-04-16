@@ -605,13 +605,6 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
                     # Profile first and / or use FDO if you need better performance than this.
                     "-O2",
 
-                    # QNX OPTS
-                    "-U_FORTIFY_SOURCE",
-                    "-D_QNX_SOURCE",
-                    "-Qunused-arguments",
-                    "-Wno-error",
-                    "-w",
-
                     # Disable assertions
                     "-DNDEBUG",
 
@@ -619,6 +612,15 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
                     # size in some cases?).
                     "-ffunction-sections",
                     "-fdata-sections",
+                ] + [
+                    "-D_QNX_SOURCE",
+                    "-Qunused-arguments",
+                    "-Wno-error",
+                    "-w",
+                ] if qnx else [
+                    # Security hardening on by default.
+                    # Conservative choice; -D_FORTIFY_SOURCE=2 may be unsafe in some cases.
+                    "-D_FORTIFY_SOURCE=1",
                 ],
             ),
             "%{opt_link_flags}": get_starlark_list(
