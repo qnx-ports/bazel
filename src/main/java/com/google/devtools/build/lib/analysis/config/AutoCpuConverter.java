@@ -111,6 +111,8 @@ public class AutoCpuConverter extends Converter.Contextless<String> {
       return Pair.of(CPU.getCurrent(), OS.OPENBSD);
     } else if (input.startsWith("x64_windows")) {
       return Pair.of(CPU.getCurrent(), OS.WINDOWS);
+    } else if (input.startsWith("qnx")) {
+      return Pair.of(CPU.getCurrent(), OS.QNX);
     }
 
     // Handle the Linux cases.

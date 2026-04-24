@@ -172,6 +172,24 @@ config_setting(
 )
 
 config_setting(
+    name = "qnx_x86_64",
+    constraint_values = [
+        "@platforms//os:qnx",
+        "@platforms//cpu:x86_64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "qnx_arm64",
+    constraint_values = [
+        "@platforms//os:qnx",
+        "@platforms//cpu:aarch64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
     name = "windows",
     constraint_values = ["@platforms//os:windows"],
     visibility = ["//visibility:public"],
